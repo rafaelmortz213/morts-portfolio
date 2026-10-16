@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Environment files: never commit real values.
+# Only .env.example (variable names and safe placeholders) is tracked.
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Supabase local state (later phases)
+supabase/.temp/
+supabase/.branches/
+
+# Tooling and editors
+.vite/
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
