@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build site artifact
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       VITE_BASE_PATH: /morts-portfolio/
@@ -57,7 +57,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       pages: write
@@ -75,7 +75,7 @@ jobs:
   smoke:
     name: Smoke test deployed site
     needs: deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Check out
@@ -92,7 +92,7 @@ jobs:
   route-matrix-deployed:
     name: Route matrix on deployed site
     needs: [deploy, smoke]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Check out
