@@ -1,0 +1,44 @@
+name: Bootstrap dependencies (one-time, remove after use)
+
+# The authoring environment could not reach the npm registry, so this one-time workflow resolves
+# the dependency set on a GitHub runner, pins exact versions, and commits package.json and
+# package-lock.json back to the branch. It is deleted in the next commit.
+on:
+  push:
+    branches: [phase-1-foundation]
+    paths: ['.github/workflows/bootstrap-deps.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install runtime dependencies
+        run: npm install --save-exact react react-dom react-router-dom lucide-react
+
+      - name: Install development dependencies
+        run: >
+          npm install --save-dev --save-exact vite @vitejs/plugin-react typescript
+          @types/react @types/react-dom @types/node vitest jsdom @testing-library/react
+          @testing-library/dom eslint @eslint/js typescript-eslint eslint-plugin-react-hooks
+          eslint-plugin-react-refresh eslint-config-prettier globals prettier @playwright/test
+
+      - name: Show resolved versions
+        run: npm ls --depth=0
+
+      - name: Commit package.json and package-lock.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: add dependencies and lockfile (bootstrap)"
+          git push

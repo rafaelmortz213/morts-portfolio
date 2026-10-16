@@ -1,0 +1,125 @@
+name: Deploy to GitHub Pages
+
+# Pushes to main run the full validation, build, and deploy.
+# Pull requests are handled by ci.yml and never deploy.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time; a running deployment is never cancelled midway.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Build site artifact
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_BASE_PATH: /morts-portfolio/
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (version from .nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies (lockfile required)
+        run: npm ci
+
+      - name: Build (runs the configuration check and creates 404.html)
+        run: npm run build
+
+      - name: Scan build output for secrets
+        run: npm run scan:dist
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  smoke:
+    name: Smoke test deployed site
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (version from .nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Home page and deep link
+        run: node scripts/smoke.mjs "${{ needs.deploy.outputs.page_url }}"
+
+  route-matrix-deployed:
+    name: Route matrix on deployed site
+    needs: [deploy, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (version from .nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies (lockfile required)
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Route matrix against the deployed URL
+        env:
+          E2E_BASE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-deployed
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

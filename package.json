@@ -1,0 +1,28 @@
+{
+  "name": "morts-portfolio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MORTS. portfolio: Practical Software. Thoughtful Solutions.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "check:config": "node scripts/check-config.mjs",
+    "build": "npm run check:config && tsc -b && vite build && node scripts/postbuild.mjs",
+    "scan:dist": "node scripts/scan-dist.mjs dist",
+    "preview": "vite preview",
+    "serve:pages-sim": "node scripts/serve-pages-sim.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "validate": "npm run format:check && npm run typecheck && npm run lint && npm test && npm run test:scripts && npm run build && npm run scan:dist"
+  }
+}
